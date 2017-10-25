@@ -7,7 +7,7 @@ versions of a task and aggregate results.
 
 The contract between you, the user, and Turkmeister is that you provide a single task directory containing:
   + `task.py`: A class-based view (more on this below) that handles:
-    - the default title, description for a task.
+    - default parameters for a HIT (e.g., title, description, etc.)
     - what to show the turker.
     - (optional) how to view the turker's responses.
     - how many assignments to provide by default, as well an expiry time.
