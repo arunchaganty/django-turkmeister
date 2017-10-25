@@ -32,8 +32,10 @@ def connect():
     logger.debug("Successfully connected.")
     return conn
 
+_CONN = connect()
+
 # HIT functions.
-def create_hit(conn, task_settings, url=settings.URL):
+def create_hit(task_settings, conn=None, url=settings.URL):
     """
     Create a hit on mturk with @question in a @batch using @mturk_connection
     """
@@ -43,6 +45,9 @@ def create_hit(conn, task_settings, url=settings.URL):
     assert "Reward" in task_settings
     assert "AssignmentDurationInSeconds" in task_settings
     assert "LifetimeInSeconds" in task_settings
+
+    if conn is None:
+        conn = _CONN
 
     logger.debug("Creating HIT")
     question = ExternalQuestion(url, task_settings.get("FrameHeight", 800))
@@ -58,17 +63,32 @@ def create_hit(conn, task_settings, url=settings.URL):
     logger.debug("HIT created (%s, %s).", response['HIT']['HITTypeId'], response['HIT']['HITId'])
     return response['HIT']
 
-def get_hit(conn, hit_id):
+def get_hit(hit_id, conn=None):
+    if conn is None:
+        conn = _CONN
+
     return conn.get_hit(HITId=hit_id)['HIT']
+
+def get_assignment(assignment_id, conn=None):
+    if conn is None:
+        conn = _CONN
+    ret = conn.get_hit(AssignmentId=assignment_id)['Assignment']
+    if "Answer" in ret:
+        ret["Output"] = parse_assignment_response(ret["Answer"])
+
+    return ret
 
 class HitMustBeReviewed(Exception):
     pass
 
-def revoke_hit(conn, hit_id):
+def revoke_hit(hit_id, conn=None):
     """
     Revokes a HIT by first expiring it and then trying to delete it.
     This method will raise an RequestException if the HIT needs to be reviewed.
     """
+    if conn is None:
+        conn = _CONN
+
     hit = get_hit(conn, hit_id)
 
     # Check if already disposed of.
@@ -119,7 +139,10 @@ def test_create_revoke_hit():
     assert r is not None
     assert r['HITStatus'] == 'Disposed'
 
-def renew_hit(conn, hit_id, time=None):
+def renew_hit(hit_id, time=None, conn=None):
+    if conn is None:
+        conn = _CONN
+
     if time is None:
         time = datetime.now() + timedelta(days=1)
     logger.info("Updating expiry for HIT %s to %s", hit_id, time)
@@ -130,7 +153,10 @@ def renew_hit(conn, hit_id, time=None):
         )
     return True
 
-def increment_assignments(conn, hit_id, count=1):
+def increment_assignments(hit_id, count=1, conn=None):
+    if conn is None:
+        conn = _CONN
+
     logger.info("Incrementing %s assignments for HIT %s", count, hit_id)
     conn.create_additional_assignments_for_hit(
         HITId=hit_id,
@@ -142,18 +168,24 @@ def increment_assignments(conn, hit_id, count=1):
 class MTurkInvalidStatus(Exception):
     pass
 
-def retrieve_assignments_for_hit(conn, hit_id):
+def retrieve_assignments_for_hit(hit_id, conn=None):
     """Get all the completed assignments for the given @hit_id and insert into the database"""
+    if conn is None:
+        conn = _CONN
+
     hit_response = conn.list_assignments_for_hit(HITId = hit_id)
     assignments = hit_response['Assignments']
 
     ret = []
     for assignment_response in assignments:
-        assignment_response["output"] = parse_assignment_response(assignment_response["Answer"])
+        assignment_response["Output"] = parse_assignment_response(assignment_response["Answer"])
         ret.append(assignment_response)
     return ret
 
-def reject_assignment(conn, assignment_id, message = None):
+def reject_assignment(assignment_id, message=None, conn=None):
+    if conn is None:
+        conn = _CONN
+
     assn = conn.get_assignment(AssignmentId = assignment_id)
     status = assn["Assignment"]["AssignmentStatus"]
     if status == "Approved":
@@ -166,7 +198,10 @@ def reject_assignment(conn, assignment_id, message = None):
     conn.reject_assignment(AssignmentId = assignment_id, message = message)
     return True
 
-def approve_assignment(conn, assignment_id):
+def approve_assignment(assignment_id, conn=None):
+    if conn is None:
+        conn = _CONN
+
     assn = conn.get_assignment(AssignmentId = assignment_id)
     status = assn["Assignment"]["AssignmentStatus"]
     if status == "Approved":
