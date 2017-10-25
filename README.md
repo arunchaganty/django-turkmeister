@@ -40,25 +40,8 @@ TBD
 
 # Internals
 
-Turkmeister seeks to handle the following problems:
-- model structure (2hrs)
-    - Task
-        - name, version, timestamp, classname
-    - Batch
-        - task, timestamp, state = {uploading, pending-annotation, pending-aggregation, done}
-        - sync() -> ensures the HIT states of all children are properly accounted for.
-        - .cancel()
-    - HIT
-        - batch, input_data, HITID, output_data (NULL), state = {pending-annotation, pending-aggregation, done, cancelled}
-        - sync() -> ensures the HIT state is accurately reflected, and all assignments are accounted for.
-        - extend() -> increases assignment for some reason.
-        - cancel() -> cancels the task.
-        - .mturk -> gets mturk object
-    - Assignment
-        - hit, response, state = {pending-aggregation, accepted, rejected}
-        - sync() -> ensures the HIT state is accurately reflected.
-
-        - .mturk -> gets mturk object
+- task class definition. (1hr)
+- getting a task. (30min)
 - views (2hrs)
     - serve/HIT_ID, ASSIGNMENT_ID
         - gets the task view from tasks and responds using it.
@@ -69,3 +52,4 @@ Turkmeister seeks to handle the following problems:
 - admin (1hr)
     - standard views.
     - actions to sync/cancel/extend a batch, hit, assignment.
+    - email?

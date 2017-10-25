@@ -8,6 +8,12 @@ class Task(models.Model):
     version = models.IntegerField(help_text="Version of this task (auto-updated)")
     created = models.DateTimeField(auto_now=True, help_text="When the task was added")
 
+    def __str__(self):
+        return "{}-{}".format(self.name, self.version)
+
+    def __repr__(self):
+        return "<Task: {}-{}>".format(self.name, self.version)
+
     def get(self):
         # TODO: Get the task from the tasks directory.
         raise NotImplementedError()
@@ -29,6 +35,12 @@ class Batch(models.Model):
     task = models.ForeignKey(Task, help_text="Task to use for this batch")
     created = models.DateTimeField(auto_now=True, help_text="When the batch was created")
     state = models.IntegerField(default=UPLOADING, help_text="Current state of the batch")
+
+    def __str__(self):
+        return "Batch {} ({})".format(self.id, self.task)
+
+    def __repr__(self):
+        return "<Batch: {}>".format(self.id)
 
     def sync(self):
         for hit in self.hits:
@@ -60,6 +72,12 @@ class Hit(models.Model):
     input_data = JSONField(help_text="Input data for this HIT")
     output_data = JSONField(null=True, help_text="Output data for this HIT (set post-aggregation)")
     state = models.IntegerField(default=PENDING_ANNOTATION, help_text="Current state of the batch")
+
+    def __str__(self):
+        return "HIT {} ({})".format(self.id, self.task)
+
+    def __repr__(self):
+        return "<HIT: {}>".format(self.id)
 
     @property
     def task(self):
@@ -131,6 +149,13 @@ class Assignment(models.Model):
     created = models.DateTimeField(auto_now=True, help_text="When the batch was created")
     output_data = JSONField(help_text="Output data for this HIT")
     state = models.IntegerField(default=PENDING_VERIFICATION, help_text="Current state of the batch")
+
+    def __str__(self):
+        return "Assignment {} (HIT{}, {})".format(self.id, self.hit_id, self.task)
+
+    def __repr__(self):
+        return "<Assignment: {} (HIT{})>".format(self.id, self.hit_id)
+
 
     @classmethod
     def from_mturk(cls, assn):
